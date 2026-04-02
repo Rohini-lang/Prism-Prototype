@@ -15,6 +15,7 @@ export interface ControlBundle {
   id: string;
   name: string;
   markets: string[];
+  recommended?: boolean;
 }
 
 export interface ChartDataPoint {
@@ -47,10 +48,15 @@ export interface KPIData {
   sublabel?: string;
 }
 
-export interface AnalysisResult {
-  kpis: KPIData[];
+export type ModelType = "gross_adds" | "churn" | "auto_renewal";
+
+export interface ModelData {
   chartData: ChartDataPoint[];
-  eventStartWeek: number;
+  kpis: {
+    primary: KPIData;
+    secondary: KPIData;
+    tertiary: KPIData;
+  };
   marketComparison: MarketComparison[];
   elasticityData: ElasticityDataPoint[];
 }

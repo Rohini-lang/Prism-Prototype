@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import * as Slider from "@radix-ui/react-slider";
 import * as Toggle from "@radix-ui/react-toggle";
+import type { ModelType } from "@/data/types";
 
 export type Tier = "Ad-lite" | "Ad-free" | "Ultimate Ad-free";
 export type Category = "Retail" | "Wholesale" | "Both";
@@ -16,7 +17,7 @@ interface FilterSectionProps {
   onCategoryChange: (value: Category) => void;
   contentType: ContentType;
   onContentTypeChange: (value: ContentType) => void;
-  activeMetric: string;
+  selectedModel: ModelType;
   onReset: () => void;
   hasChanges: boolean;
 }
@@ -26,20 +27,10 @@ const CATEGORY_OPTIONS: Category[] = ["Retail", "Wholesale", "Both"];
 const CONTENT_TYPE_OPTIONS: ContentType[] = ["Tentpole", "Library", "Both"];
 
 export function FilterSection({
-  timeWindow,
-  onTimeWindowChange,
-  tiers,
-  onTiersChange,
-  category,
-  onCategoryChange,
-  contentType,
-  onContentTypeChange,
-  activeMetric,
-  onReset,
-  hasChanges,
+  timeWindow, onTimeWindowChange, tiers, onTiersChange, category, onCategoryChange,
+  contentType, onContentTypeChange, selectedModel, onReset, hasChanges,
 }: FilterSectionProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-
   const allTiersSelected = tiers.length === TIER_OPTIONS.length;
 
   const handleTierToggle = (tier: Tier) => {
@@ -55,138 +46,77 @@ export function FilterSection({
     onTiersChange(allTiersSelected ? [TIER_OPTIONS[0]] : [...TIER_OPTIONS]);
   };
 
+  const pillClass = (active: boolean) =>
+    `px-3 py-2 text-xs rounded-full border transition-colors ${
+      active
+        ? "bg-gradient-to-r from-[#9B51E0] to-[#7B68EE] text-white border-[#9B51E0]"
+        : "bg-white text-[#1E1B3A] border-[#E8E4F0] hover:border-[#9B51E0]/30"
+    }`;
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 text-sm text-[#1A1A1A] hover:text-[#2D7D78] transition-colors"
-        >
+        <button type="button" onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 text-sm text-[#1E1B3A] font-medium hover:text-[#9B51E0] transition-colors">
           <span>Refine your view</span>
-          {isExpanded ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
         {hasChanges && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="text-xs text-[#2D7D78] hover:text-[#1A1A1A] flex items-center gap-1 transition-colors"
-          >
-            <RotateCcw className="w-3 h-3" />
-            Reset
+          <button type="button" onClick={onReset}
+            className="text-xs text-[#9B51E0] hover:text-[#7B68EE] flex items-center gap-1.5 transition-colors">
+            <RotateCcw className="w-3 h-3" />Reset
           </button>
         )}
       </div>
 
       {isExpanded && (
-        <div className="space-y-4 pt-2">
-          {/* Time Window */}
-          <div className="space-y-2">
-            <label className="text-xs text-[#6B6B6B]">Time window</label>
-            <div className="space-y-3">
-              <Slider.Root
-                value={[timeWindow]}
-                onValueChange={([value]) => onTimeWindowChange(value)}
-                min={4}
-                max={16}
-                step={2}
-                className="relative flex items-center select-none touch-none w-full h-5"
-              >
-                <Slider.Track className="bg-[#E0DED8] relative grow rounded-full h-1">
-                  <Slider.Range className="absolute bg-[#2D7D78] rounded-full h-full" />
-                </Slider.Track>
-                <Slider.Thumb className="block w-4 h-4 bg-white border-2 border-[#2D7D78] rounded-full hover:bg-[#F8F7F4] focus:outline-none focus:ring-2 focus:ring-[#2D7D78]" />
-              </Slider.Root>
-              <div className="text-xs font-mono text-[#1A1A1A] text-center">
-                ±{timeWindow} weeks
-              </div>
+        <div className="space-y-5 pt-2">
+          <div className="space-y-3">
+            <label className="text-xs text-[#7B7694] font-medium">Time window</label>
+            <Slider.Root value={[timeWindow]} onValueChange={([v]) => onTimeWindowChange(v)}
+              min={4} max={16} step={2} className="relative flex items-center select-none touch-none w-full h-5">
+              <Slider.Track className="bg-[#E8E4F0] relative grow rounded-full h-1">
+                <Slider.Range className="absolute bg-gradient-to-r from-[#9B51E0] to-[#7B68EE] rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-4 h-4 bg-white border-2 border-[#9B51E0] rounded-full hover:bg-[#FAFAFF] focus:outline-none focus:ring-2 focus:ring-[#9B51E0] shadow-md" />
+            </Slider.Root>
+            <div className="text-xs font-mono text-[#1E1B3A] text-center bg-white py-1.5 rounded-lg border border-[#E8E4F0]">
+              ±{timeWindow} weeks
             </div>
           </div>
 
-          {/* Tiers */}
-          <div className="space-y-2">
-            <label className="text-xs text-[#6B6B6B]">Tier</label>
+          <div className="space-y-3">
+            <label className="text-xs text-[#7B7694] font-medium">Tier</label>
             <div className="flex gap-2 flex-wrap">
-              <Toggle.Root
-                pressed={allTiersSelected}
-                onPressedChange={handleSelectAllTiers}
-                className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                  allTiersSelected
-                    ? "bg-[#2D7D78] text-white border-[#2D7D78]"
-                    : "bg-white text-[#1A1A1A] border-[#E0DED8] hover:border-[#C4C2BA]"
-                }`}
-              >
-                All
-              </Toggle.Root>
+              <Toggle.Root pressed={allTiersSelected} onPressedChange={handleSelectAllTiers} className={pillClass(allTiersSelected)}>All</Toggle.Root>
               {TIER_OPTIONS.map((tier) => {
                 const isSelected = !allTiersSelected && tiers.includes(tier);
                 return (
-                  <Toggle.Root
-                    key={tier}
-                    pressed={isSelected}
-                    onPressedChange={() => {
-                      if (allTiersSelected) {
-                        onTiersChange([tier]);
-                      } else {
-                        handleTierToggle(tier);
-                      }
-                    }}
-                    className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                      isSelected
-                        ? "bg-[#2D7D78] text-white border-[#2D7D78]"
-                        : "bg-white text-[#1A1A1A] border-[#E0DED8] hover:border-[#C4C2BA]"
-                    }`}
-                  >
-                    {tier}
-                  </Toggle.Root>
+                  <Toggle.Root key={tier} pressed={isSelected}
+                    onPressedChange={() => { if (allTiersSelected) onTiersChange([tier]); else handleTierToggle(tier); }}
+                    className={pillClass(isSelected)}>{tier}</Toggle.Root>
                 );
               })}
             </div>
           </div>
 
-          {/* Category */}
-          <div className="space-y-2">
-            <label className="text-xs text-[#6B6B6B]">Category</label>
+          <div className="space-y-3">
+            <label className="text-xs text-[#7B7694] font-medium">Category</label>
             <div className="flex gap-2 flex-wrap">
               {CATEGORY_OPTIONS.map((cat) => (
-                <Toggle.Root
-                  key={cat}
-                  pressed={category === cat}
-                  onPressedChange={() => onCategoryChange(cat)}
-                  className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                    category === cat
-                      ? "bg-[#2D7D78] text-white border-[#2D7D78]"
-                      : "bg-white text-[#1A1A1A] border-[#E0DED8] hover:border-[#C4C2BA]"
-                  }`}
-                >
-                  {cat}
-                </Toggle.Root>
+                <Toggle.Root key={cat} pressed={category === cat} onPressedChange={() => onCategoryChange(cat)}
+                  className={pillClass(category === cat)}>{cat}</Toggle.Root>
               ))}
             </div>
           </div>
 
-          {/* Content Type — only visible for Gross Adds metric */}
-          {activeMetric === "grossAdds" && (
-            <div className="space-y-2">
-              <label className="text-xs text-[#6B6B6B]">Content type</label>
+          {selectedModel === "gross_adds" && (
+            <div className="space-y-3">
+              <label className="text-xs text-[#7B7694] font-medium">Content type</label>
               <div className="flex gap-2 flex-wrap">
                 {CONTENT_TYPE_OPTIONS.map((ct) => (
-                  <Toggle.Root
-                    key={ct}
-                    pressed={contentType === ct}
-                    onPressedChange={() => onContentTypeChange(ct)}
-                    className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                      contentType === ct
-                        ? "bg-[#2D7D78] text-white border-[#2D7D78]"
-                        : "bg-white text-[#1A1A1A] border-[#E0DED8] hover:border-[#C4C2BA]"
-                    }`}
-                  >
-                    {ct}
-                  </Toggle.Root>
+                  <Toggle.Root key={ct} pressed={contentType === ct} onPressedChange={() => onContentTypeChange(ct)}
+                    className={pillClass(contentType === ct)}>{ct}</Toggle.Root>
                 ))}
               </div>
             </div>
