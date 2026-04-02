@@ -1,2 +1,2 @@
 # Prism - Prototype
-For all my personal projects - please do not reference for anything else
+Testing designs built in cursor for the counterfactual pricing analysis dashboard
