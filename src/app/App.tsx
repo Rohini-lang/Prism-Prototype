@@ -14,6 +14,7 @@ import { MarketComparisonTable } from "./components/MarketComparisonTable";
 import { ElasticityChart } from "./components/ElasticityChart";
 import { Tooltip } from "./components/Tooltip";
 import { ModelSelector } from "./components/ModelSelector";
+import { KeyTakeaways } from "./components/KeyTakeaways";
 import { PrismLogo } from "./components/PrismLogo";
 import { DevPanel } from "./components/DevPanel";
 import { ChatBox } from "./components/ChatBox";
@@ -132,9 +133,9 @@ export default function App() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-3xl text-center"
         >
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <PrismLogo size={36} />
-            <h1 className="font-display text-4xl text-[#1E1B3A] tracking-tight">
+          <div className="flex items-center justify-center gap-2.5 mb-8">
+            <PrismLogo size={30} />
+            <h1 className="font-display text-[34px] font-bold text-[#1E1B3A] tracking-tight leading-none">
               Good {getTimeOfDay()},
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#9B51E0] to-[#7B68EE] ml-2">
                 Rohini
@@ -146,11 +147,13 @@ export default function App() {
             <ChatBox />
           </div>
 
-          {/* Section divider */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E8E4F0] to-transparent" />
-            <span className="text-[10px] uppercase tracking-[0.2em] text-[#B5B0C8] font-medium">Explore dashboards</span>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E8E4F0] to-transparent" />
+          {/* Section header */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-[#E2E0EE]" />
+            <p className="text-[12px] font-semibold text-[#B5B0C8] text-center tracking-wide">
+              Dashboards
+            </p>
+            <div className="flex-1 h-px bg-[#E2E0EE]" />
           </div>
 
           {/* Navigation Tabs */}
@@ -165,27 +168,32 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay: 0.05 * i }}
                   onClick={() => { if (tab.active) setActiveTab(tab.id); }}
-                  className={`group relative flex flex-col items-center gap-2.5 px-3 py-4 rounded-xl border transition-all ${
+                  style={tab.active ? { border: "1.5px solid #6B5CE7" } : undefined}
+                  className={`group relative flex flex-col items-center gap-2.5 px-3 py-4 rounded-xl transition-all ${
                     tab.active
-                      ? "border-[#E8E4F0] bg-white hover:border-[#9B51E0]/40 hover:shadow-lg hover:shadow-[#9B51E0]/8 cursor-pointer shadow-sm"
-                      : "border-transparent bg-[#F5F3FA] cursor-default opacity-50"
+                      ? "bg-[#F9F7FF] cursor-pointer"
+                      : "border border-transparent bg-[#F5F3FA] cursor-default opacity-[0.45]"
                   }`}
                 >
+                  {/* Live badge on active card */}
+                  {tab.active && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-white border border-[#E8E4F0] rounded-full px-1.5 py-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                      <span className="text-[9px] font-bold text-[#2D2D2D] leading-none">Live</span>
+                    </div>
+                  )}
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
                     tab.active
-                      ? "bg-[#F0EDF8] group-hover:bg-[#9B51E0]/15"
+                      ? "bg-[#EDE9FC]"
                       : "bg-[#EDEAF5]"
                   }`}>
-                    <Icon className={`w-4 h-4 ${tab.active ? "text-[#9B51E0]" : "text-[#B5B0C8]"}`} />
+                    <Icon className={`w-4 h-4 ${tab.active ? "text-[#6B5CE7]" : "text-[#B5B0C8]"}`} />
                   </div>
-                  <span className={`text-[11px] leading-tight text-center font-medium ${
-                    tab.active ? "text-[#1E1B3A] group-hover:text-[#9B51E0]" : "text-[#B5B0C8]"
+                  <span className={`text-[11px] leading-tight text-center ${
+                    tab.active ? "font-bold text-[#1E1B3A]" : "font-semibold text-[#B5B0C8]"
                   }`}>
                     {tab.label}
                   </span>
-                  {!tab.active && (
-                    <span className="absolute top-2 right-2 text-[8px] text-[#B5B0C8] font-mono">Soon</span>
-                  )}
                 </motion.button>
               );
             })}
@@ -369,6 +377,8 @@ export default function App() {
                 <KPIChip {...analysisResult.kpis.tertiary} />
               </div>
             </div>
+
+            <KeyTakeaways modelType={selectedModel} />
 
             <CounterfactualChart data={analysisResult.chartData} eventStartWeek={5} />
 
