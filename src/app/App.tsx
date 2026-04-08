@@ -18,6 +18,8 @@ import { KeyTakeaways } from "./components/KeyTakeaways";
 import { PrismLogo } from "./components/PrismLogo";
 import { DevPanel } from "./components/DevPanel";
 import { ChatBox } from "./components/ChatBox";
+import { PrismChatPanel } from "./components/PrismChatPanel";
+import type { ChatMessage } from "./components/PrismChatPanel";
 import { useMode } from "./contexts/ModeContext";
 import {
   MOCK_EVENTS,
@@ -57,6 +59,36 @@ export default function App() {
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [configChanged, setConfigChanged] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ModelData | null>(null);
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatConversation, setChatConversation] = useState<ChatMessage[]>([]);
+  const [chatIsTyping, setChatIsTyping] = useState(false);
+
+  const MOCK_CHAT_RESPONSES: Record<string, string> = {
+    "Show churn trends for Q4":
+      "Churn rates decreased by 31.6% in the treatment market during Q4, with the strongest reduction seen in weeks 5-8 post-event. The counterfactual baseline projected a steady increase to 2,750, but actual churn held at 1,880.",
+    "Compare US vs UK subscriber lift":
+      "The US market showed a +16.1% subscriber lift (5,400 vs 4,650 counterfactual), while the UK saw +10.9% (5,100 vs 4,600). The US outperformed by 5.2 percentage points, likely due to higher promotional visibility.",
+    "What drove the Black Friday spike?":
+      "The primary driver was an 18.2% subscriber lift in gross additions, concentrated in the first 3 weeks post-event. Ad-lite tier saw the highest conversion rate, with DTC retail channels contributing 62% of new sign-ups.",
+    "Summarize model confidence across regions":
+      "Model confidence is strong across all regions: Gross Adds at 97%, Churn at 94%, and Auto-Renewal Off at 96%. The English-Speaking Markets control group consistently produces the tightest confidence intervals.",
+    "Which control group best fits LATAM?":
+      "The Latin America Cluster (8 markets) provides the highest similarity scores for LATAM events, with an average of 89%. The Emerging Markets group is a secondary option at 82% similarity.",
+  };
+
+  const handleChatSubmit = (text: string) => {
+    setChatConversation((prev) => [...prev, { role: "user", text }]);
+    setChatOpen(true);
+    setChatIsTyping(true);
+    const response =
+      MOCK_CHAT_RESPONSES[text] ??
+      `Based on the current analysis data, here's what I found regarding "${text}": The treatment market shows significant deviation from the counterfactual baseline, with a 95% confidence interval. I'd recommend drilling into the market comparison table for more granular insights.`;
+    setTimeout(() => {
+      setChatIsTyping(false);
+      setChatConversation((prev) => [...prev, { role: "assistant", text: response }]);
+    }, 1200);
+  };
 
   const selectedEventData = MOCK_EVENTS.find((e) => e.id === selectedEvent);
   const selectedBundle = MOCK_CONTROL_BUNDLES.find((b) => b.id === selectedControlGroup);
@@ -144,7 +176,7 @@ export default function App() {
           </div>
 
           <div className="mb-10">
-            <ChatBox />
+            <ChatBox onSubmit={handleChatSubmit} />
           </div>
 
           {/* Section header */}
@@ -199,6 +231,14 @@ export default function App() {
             })}
           </div>
         </motion.div>
+
+        <PrismChatPanel
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          conversation={chatConversation}
+          isTyping={chatIsTyping}
+          onSubmit={handleChatSubmit}
+        />
       </div>
     );
   }
@@ -343,7 +383,7 @@ export default function App() {
             {/* Search bar + Export */}
             <div className="flex items-center gap-4">
               <div className="flex-1">
-                <ChatBox hidePrompts />
+                <ChatBox hidePrompts onSubmit={handleChatSubmit} />
               </div>
               <button type="button"
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#E8E4F0] text-[#1E1B3A] hover:border-[#9B51E0]/40 hover:shadow-sm transition-all group shrink-0">
@@ -391,6 +431,14 @@ export default function App() {
           </motion.div>
         )}
       </main>
+
+      <PrismChatPanel
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        conversation={chatConversation}
+        isTyping={chatIsTyping}
+        onSubmit={handleChatSubmit}
+      />
     </div>
   );
 }
