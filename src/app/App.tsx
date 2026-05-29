@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Download, Loader2, Plus, Calendar, FlaskConical,
@@ -20,14 +20,21 @@ import { DevPanel } from "./components/DevPanel";
 import { ChatBox } from "./components/ChatBox";
 import { PrismChatPanel } from "./components/PrismChatPanel";
 import type { ChatMessage } from "./components/PrismChatPanel";
+import { WatchlistSection } from "./components/WatchlistSection";
+import { useWatchlist } from "./hooks/useWatchlist";
+import type { PinnedItem, PinnedScenario } from "./hooks/useWatchlist";
 import { useMode } from "./contexts/ModeContext";
+import { ElasticityDashboard } from "./pages/ElasticityDashboard";
+import { CounterfactualSandbox } from "./pages/CounterfactualSandbox";
+
+const SANDBOX_HASH = "#sandbox/counterfactual-dark";
 import {
   MOCK_EVENTS,
   MOCK_MARKETS,
   MOCK_CONTROL_BUNDLES,
   MOCK_MODEL_DATA,
 } from "@/data/mock";
-import type { ModelType, ModelData } from "@/data/types";
+import type { ModelType, ModelData, ScenarioInput } from "@/data/types";
 import type { Tier, Category, ContentType } from "./components/FilterSection";
 
 const DEFAULT_TIME_WINDOW = 12;
@@ -37,14 +44,37 @@ const DEFAULT_CONTENT_TYPE: ContentType = "Both";
 
 const TABS = [
   { id: "counterfactual", label: "Counterfactual Pricing Analysis", icon: FlaskConical, active: true },
-  { id: "elasticity", label: "Demand-Price Elasticity", icon: LineChartIcon, active: false },
+  { id: "elasticity", label: "Demand-Price Elasticity", icon: LineChartIcon, active: true },
   { id: "churn", label: "Subscriber Churn Analytics", icon: Users, active: false },
   { id: "market-insights", label: "Market Insights", icon: TrendingUp, active: false },
   { id: "promo-impact", label: "Promotional Impact Analysis", icon: BarChart3, active: false },
 ];
 
 export default function App() {
+  const [sandboxRoute, setSandboxRoute] = useState<string | null>(
+    typeof window !== "undefined" ? window.location.hash : null,
+  );
+  useEffect(() => {
+    const onHashChange = () => setSandboxRoute(window.location.hash);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  if (sandboxRoute === SANDBOX_HASH) {
+    return (
+      <CounterfactualSandbox
+        onExit={() => {
+          window.location.hash = "";
+        }}
+      />
+    );
+  }
+  return <AppMain />;
+}
+
+function AppMain() {
   const { isDev, mode, toggleMode } = useMode();
+  const { pinned, isPinned, toggle: togglePin, unpin } = useWatchlist();
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
@@ -63,6 +93,8 @@ export default function App() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatConversation, setChatConversation] = useState<ChatMessage[]>([]);
   const [chatIsTyping, setChatIsTyping] = useState(false);
+
+  const [initialElasticityScenario, setInitialElasticityScenario] = useState<ScenarioInput | undefined>();
 
   const MOCK_CHAT_RESPONSES: Record<string, string> = {
     "Show churn trends for Q4":
@@ -99,6 +131,25 @@ export default function App() {
     tiers.length === DEFAULT_TIERS.length &&
     category === DEFAULT_CATEGORY &&
     contentType === DEFAULT_CONTENT_TYPE;
+
+  const handleWatchlistNavigate = (item: PinnedItem) => {
+    if (item.kind === "scenario") {
+      setInitialElasticityScenario({
+        tier: item.tier,
+        market: item.market,
+        priceDelta: item.priceDelta,
+        horizonMonths: item.horizonMonths,
+      });
+      setActiveTab("elasticity");
+      return;
+    }
+    const modelType = item.modelType;
+    setActiveTab("counterfactual");
+    setSelectedModel(modelType);
+    setAnalysisResult(MOCK_MODEL_DATA[modelType]);
+    setHasAnalyzed(true);
+    if (item.market) setTreatmentMarket(item.market);
+  };
 
   const handleRunAnalysis = () => {
     setIsAnalyzing(true);
@@ -156,8 +207,9 @@ export default function App() {
   // ─── Home view ───
   if (!activeTab) {
     return (
-      <div className="min-h-screen bg-[#FAFAFF] flex flex-col items-center justify-center p-8">
-        <div className="fixed top-6 right-6 z-20">{modeToggle}</div>
+      <div className="min-h-screen bg-[#FAFAFF] flex">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 min-w-0 relative">
+          <div className="absolute top-6 right-6">{modeToggle}</div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -175,8 +227,13 @@ export default function App() {
             </h1>
           </div>
 
-          <div className="mb-10">
+          <div className="mb-6">
             <ChatBox onSubmit={handleChatSubmit} />
+          </div>
+
+          {/* Watchlist */}
+          <div className="mb-6 text-left">
+            <WatchlistSection pinned={pinned} onUnpin={unpin} onNavigate={handleWatchlistNavigate} />
           </div>
 
           {/* Section header */}
@@ -231,6 +288,7 @@ export default function App() {
             })}
           </div>
         </motion.div>
+        </div>
 
         <PrismChatPanel
           open={chatOpen}
@@ -240,6 +298,31 @@ export default function App() {
           onSubmit={handleChatSubmit}
         />
       </div>
+    );
+  }
+
+  // ─── Demand-Price Elasticity ───
+  if (activeTab === "elasticity") {
+    return (
+      <>
+        <ElasticityDashboard
+          initialScenario={initialElasticityScenario}
+          pinnedScenarios={pinned.filter((p): p is PinnedScenario => p.kind === "scenario")}
+          isPinned={isPinned}
+          onTogglePin={togglePin}
+          onUnpin={unpin}
+          onBack={() => { setInitialElasticityScenario(undefined); setActiveTab(null); }}
+          onChatSubmit={handleChatSubmit}
+          modeToggle={modeToggle}
+        />
+        <PrismChatPanel
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          conversation={chatConversation}
+          isTyping={chatIsTyping}
+          onSubmit={handleChatSubmit}
+        />
+      </>
     );
   }
 
@@ -359,7 +442,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Canvas */}
-      <main className={`flex-1 p-8 transition-all duration-300 ${showSidebar ? "ml-[340px]" : ""}`}>
+      <main className={`flex-1 min-w-0 p-8 transition-all duration-300 ${showSidebar ? "ml-[340px]" : ""}`}>
         <div className="flex justify-end mb-4">{modeToggle}</div>
 
         {!hasAnalyzed || !analysisResult ? (
@@ -418,7 +501,14 @@ export default function App() {
               </div>
             </div>
 
-            <KeyTakeaways modelType={selectedModel} />
+            <KeyTakeaways
+              modelType={selectedModel}
+              market={treatmentMarket}
+              pinned={pinned}
+              isPinned={isPinned}
+              onToggle={togglePin}
+              onUnpin={unpin}
+            />
 
             <CounterfactualChart data={analysisResult.chartData} eventStartWeek={5} />
 

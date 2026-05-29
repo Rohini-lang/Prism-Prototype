@@ -45,11 +45,11 @@ export function PrismChatPanel({
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ x: 440, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 440, opacity: 0 }}
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: 400, opacity: 1 }}
+          exit={{ width: 0, opacity: 0 }}
           transition={{ type: "spring", damping: 32, stiffness: 280 }}
-          className="fixed top-0 right-0 bottom-0 w-[400px] z-50 bg-white border-l border-[#E8E4F0] shadow-2xl shadow-[#9B51E0]/10 flex flex-col"
+          className="shrink-0 sticky top-0 h-screen overflow-hidden bg-white border-l border-[#E8E4F0] shadow-2xl shadow-[#9B51E0]/10 flex flex-col"
         >
           {/* Header */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-[#E8E4F0] bg-white shrink-0">

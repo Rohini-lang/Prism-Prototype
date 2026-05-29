@@ -1,125 +1,242 @@
-import { Lightbulb, TrendingUp, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Zap, Bookmark, BookmarkCheck, X } from "lucide-react";
 import type { ModelType } from "@/data/types";
+import type { PinnedItem, PinnedTakeaway, TakeawayType } from "@/app/hooks/useWatchlist";
+import { MARKET_CODE } from "@/app/hooks/useWatchlist";
+
+function KeyInsightsIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="5" width="14" height="13" rx="2.5" stroke="white" strokeWidth="1.5" fill="none" />
+      <line x1="7" y1="10" x2="14" y2="10" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+      <line x1="7" y1="13" x2="14" y2="13" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="10" cy="4" r="2.5" stroke="white" strokeWidth="1.5" fill="none" />
+      <line x1="10" y1="6.5" x2="10" y2="9.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="10" y1="8" x2="11.5" y2="8" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
+      <line x1="10" y1="9.5" x2="11.5" y2="9.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 interface Takeaway {
-  Icon: typeof Lightbulb;
-  color: string;
+  type: TakeawayType;
   headline: string;
   detail: string;
+  direction?: "positive" | "negative" | "neutral";
 }
+
+export const TYPE_CONFIG: Record<TakeawayType, { label: string; bg: string; text: string; border: string }> = {
+  trend:      { label: "Trend",      bg: "#EDE9FC", text: "#6B5CE7", border: "#C4BAF5" },
+  volatility: { label: "Volatility", bg: "#FEF3C7", text: "#D97706", border: "#FCD34D" },
+  anomaly:    { label: "Anomaly",    bg: "#FCE7F3", text: "#BE185D", border: "#F9A8D4" },
+};
+
+export const MODEL_LABELS: Record<ModelType, string> = {
+  gross_adds:   "Gross Adds",
+  churn:        "Churn",
+  auto_renewal: "Auto-Renewal",
+};
 
 const TAKEAWAYS: Record<ModelType, Takeaway[]> = {
   gross_adds: [
     {
-      Icon: TrendingUp,
-      color: "#9B51E0",
-      headline: "Promotional pricing drove a sustained acquisition surge",
+      type: "trend",
+      direction: "positive",
+      headline: "+18.2% subscriber lift held through Week 12",
       detail:
-        "The +18.2% subscriber lift isn't a launch-week pop — actual gross adds stayed 950+ ahead of the counterfactual baseline through Week 12. That persistence suggests the discount opened a new addressable segment rather than simply pulling forward existing demand.",
+        "Actual gross adds stayed 950+ above the counterfactual baseline for the entire post-period — pointing to a new addressable segment opened by the discount, not just pull-forward demand.",
     },
     {
-      Icon: Lightbulb,
-      color: "#6C63FF",
-      headline: "Ad-lite captured the bulk of incremental volume",
+      type: "anomaly",
+      direction: "positive",
+      headline: "US outperformed peer markets by 5–10 pts",
       detail:
-        "DTC-heavy channels contributed ~62% of new sign-ups. The entry-tier price point lowered friction for price-sensitive cohorts who wouldn't have converted at standard rates — widening the funnel, not cannibalising premium tiers.",
+        "US (+16.1%) beat UK (+10.9%) and Australia (+6.1%) despite all markets showing similarity scores above 85%. The gap points to promotional visibility and channel mix differences worth isolating.",
     },
     {
-      Icon: AlertCircle,
-      color: "#00B4D8",
-      headline: "US outperformed peer markets — a scalability signal worth testing",
+      type: "volatility",
+      direction: "neutral",
+      headline: "Ad-lite volume concentrated in first 3 weeks — watch Week 4+ retention",
       detail:
-        "US (+16.1% delta) beat UK (+10.9%) and Australia (+6.1%) by a meaningful margin. Similarity scores hold above 85% across all markets, so the gap points to promotional visibility and channel mix differences, not control-group misfit.",
+        "DTC channels drove ~62% of new sign-ups, heavily front-loaded. The Week 4–6 window is critical: if these cohorts churn before auto-renewal, the headline lift overstates durable impact.",
     },
   ],
   churn: [
     {
-      Icon: TrendingUp,
-      color: "#9B51E0",
-      headline: "The pricing change reversed a structural churn trend",
+      type: "trend",
+      direction: "positive",
+      headline: "Churn fell 31.6% vs. counterfactual by Week 12",
       detail:
-        "Without the event the model projected churn rising to 2,750 by Week 12. Instead it held at 1,880 — a 31.6% reduction. The divergence opened in Week 5 and widened steadily, pointing to a retention mechanism rather than a one-time anomaly.",
+        "Without the event, the model projected churn rising to 2,750. It held at 1,880. The divergence opened in Week 5 and widened steadily — a structural retention effect, not a one-off.",
     },
     {
-      Icon: Lightbulb,
-      color: "#6C63FF",
-      headline: "Weeks 5–8 show the strongest lock-in effect post-event",
+      type: "volatility",
+      direction: "neutral",
+      headline: "Weeks 5–8 show the steepest rate of change — high sensitivity window",
       detail:
-        "The sharpest gap between actual and counterfactual churn sits in the 4-week window immediately after the event. This aligns with promotional renewal windows — subscribers who signed up at the promo price are re-committing before standard rates kick in.",
+        "The gap between actual and counterfactual churn is accelerating fastest in this 4-week window. It coincides with promotional renewal deadlines — small cohort-level shifts here will materially swing the final metric.",
     },
     {
-      Icon: AlertCircle,
-      color: "#00B4D8",
-      headline: "UK churn reduction lags the US — watch the mid-term cohort",
+      type: "anomaly",
+      direction: "negative",
+      headline: "UK churn reduction lags US by 6.6 pts — structural outlier",
       detail:
-        "US achieved -31.6% vs UK's -25.0%. The 6.6 pt gap could reflect shorter promotional windows or lower content engagement. Track Weeks 13–20 to see whether UK cohorts catch up as they reach their first full renewal cycle.",
+        "US achieved −31.6% vs UK's −25.0%. Similarity scores are tight, so this gap likely reflects shorter UK promotional windows or lower content engagement. Weeks 13–20 will confirm whether it's timing or a market-level difference.",
     },
   ],
   auto_renewal: [
     {
-      Icon: TrendingUp,
-      color: "#9B51E0",
-      headline: "Auto-renewal opt-out rates dropped sharply at the price step-down",
+      type: "trend",
+      direction: "positive",
+      headline: "Auto-renewal off-rates down 40.5% — compounding through Week 12",
       detail:
-        "The 40.5% reduction in auto-renewal off-rates reflects that subscribers who enrolled during the promotional window are more likely to let their subscription run passively at a lower price — the discount reduces the psychological friction of staying.",
+        "The reduction isn't plateauing: actual off-rates (1,250) are still widening from counterfactual (2,100) at Week 12. Subscribers enrolled at the promo price are becoming passive renewers, reducing active re-engagement cost.",
     },
     {
-      Icon: Lightbulb,
-      color: "#6C63FF",
-      headline: "The gap widens in the back half — a compounding retention signal",
+      type: "volatility",
+      direction: "neutral",
+      headline: "Back-half widening suggests habit formation, but cohort timing is tight",
       detail:
-        "By Week 12, actual auto-renewal off-rates (1,250) are running 41% below counterfactual (2,100). The widening trajectory suggests subscribers aren't just staying — they're becoming habitual, reducing the need for active re-engagement spend.",
+        "The gap accelerates in Weeks 8–12. This is encouraging but also means a policy change during this window — price step-up, content gaps — could trigger a sharp reversal that the model won't anticipate.",
     },
     {
-      Icon: AlertCircle,
-      color: "#00B4D8",
-      headline: "Monitor margin dilution as the promo cohort normalises",
+      type: "anomaly",
+      direction: "negative",
+      headline: "ARPU dilution risk at renewal — LTV equation unconfirmed",
       detail:
-        "The metric looks strong now, but subscribers acquired at the discount will renew at the promotional rate. Model the ARPU delta against the retention gain to confirm the LTV equation is net positive before expanding to additional markets.",
+        "The retention metric looks strong, but the promo cohort renews at a discounted rate. Without modelling the ARPU delta against the retention gain, the net LTV impact remains ambiguous before scaling to new markets.",
     },
   ],
 };
 
+export const directionIcon = (direction?: Takeaway["direction"], size = "w-3.5 h-3.5") => {
+  if (direction === "positive") return <TrendingUp className={`${size} text-[#10B981]`} />;
+  if (direction === "negative") return <TrendingDown className={`${size} text-[#E94560]`} />;
+  return <Zap className={`${size} text-[#D97706]`} />;
+};
+
 interface KeyTakeawaysProps {
   modelType: ModelType;
+  market?: string | null;
+  pinned: PinnedItem[];
+  isPinned: (key: string) => boolean;
+  onToggle: (item: Omit<PinnedTakeaway, "pinnedAt">) => void;
+  onUnpin: (key: string) => void;
 }
 
-export function KeyTakeaways({ modelType }: KeyTakeawaysProps) {
+const getKey = (mt: ModelType, i: number) => `${mt}-${i}`;
+
+export function KeyTakeaways({ modelType, market, pinned, isPinned, onToggle, onUnpin }: KeyTakeawaysProps) {
   const takeaways = TAKEAWAYS[modelType];
+  const localPinnedCount = pinned.filter((p) => p.kind === "takeaway" && p.modelType === modelType).length;
 
   return (
     <div className="rounded-2xl border border-[#E8E4F0] bg-white overflow-hidden">
+      {/* Header */}
       <div className="px-6 py-4 border-b border-[#E8E4F0] flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#9B51E0] to-[#7B68EE] flex items-center justify-center shadow-sm shrink-0">
-          <Lightbulb className="w-4 h-4 text-white" />
+          <KeyInsightsIcon />
         </div>
-        <div>
-          <h3 className="text-sm font-semibold text-[#1E1B3A]">Key Takeaways</h3>
-          <p className="text-[11px] text-[#7B7694]">The why behind every number</p>
-        </div>
+        <h3 className="text-sm font-semibold text-[#1E1B3A] flex-1">Key Takeaways</h3>
+        {pinned.length > 0 && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EDE9FC] border border-[#C4BAF5]">
+            <Bookmark className="w-3 h-3 text-[#6B5CE7] fill-[#6B5CE7]" />
+            <span className="text-[11px] font-semibold text-[#6B5CE7]">
+              {pinned.length} on watchlist
+            </span>
+          </div>
+        )}
       </div>
 
-      <div className="px-6 py-5 space-y-5">
+      {/* Takeaway rows */}
+      <div className="divide-y divide-[#F0EDF8]">
         {takeaways.map((t, i) => {
-          const Icon = t.Icon;
+          const key    = getKey(modelType, i);
+          const cfg    = TYPE_CONFIG[t.type];
+          const pinned_ = isPinned(key);
           return (
-            <div key={i} className="flex gap-4">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                style={{ backgroundColor: `${t.color}16` }}
-              >
-                <Icon className="w-4 h-4" style={{ color: t.color }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#1E1B3A] leading-snug mb-1">
-                  {t.headline}
-                </p>
+            <div
+              key={i}
+              className={`px-6 py-4 flex gap-4 items-start group transition-colors ${
+                pinned_ ? "bg-[#FAFAFF]" : "hover:bg-[#FAFAFF]"
+              }`}
+            >
+              <div className="mt-0.5 shrink-0">{directionIcon(t.direction)}</div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md border shrink-0"
+                    style={{ background: cfg.bg, color: cfg.text, borderColor: cfg.border }}
+                  >
+                    {cfg.label}
+                  </span>
+                  <p className="text-sm font-semibold text-[#1E1B3A] leading-snug">{t.headline}</p>
+                </div>
                 <p className="text-xs text-[#7B7694] leading-relaxed">{t.detail}</p>
               </div>
+
+              <button
+                type="button"
+                onClick={() => onToggle({ kind: "takeaway", key, modelType, type: t.type, direction: t.direction, headline: t.headline, market: market ?? undefined })}
+                title={pinned_ ? "Remove from watchlist" : "Pin to watchlist"}
+                className={`shrink-0 mt-0.5 p-1.5 rounded-lg transition-all ${
+                  pinned_
+                    ? "text-[#6B5CE7] bg-[#EDE9FC]"
+                    : "text-[#B5B0C8] opacity-0 group-hover:opacity-100 hover:text-[#6B5CE7] hover:bg-[#EDE9FC]"
+                }`}
+              >
+                {pinned_ ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+              </button>
             </div>
           );
         })}
       </div>
+
+      {/* Watchlist summary inside the card (shows current model's pins) */}
+      {localPinnedCount > 0 && (
+        <div className="border-t border-[#E8E4F0] bg-[#FAFAFF] px-6 py-4">
+          <p className="text-[11px] font-semibold text-[#6B5CE7] uppercase tracking-wide mb-3">
+            Watchlist · {pinned.length} item{pinned.length !== 1 ? "s" : ""}
+          </p>
+          <div className="space-y-2">
+            {pinned.filter((p): p is PinnedTakeaway => p.kind === "takeaway").map((item) => {
+              const cfg = TYPE_CONFIG[item.type];
+              return (
+                <div
+                  key={item.key}
+                  className="flex items-center gap-2.5 bg-white border border-[#E8E4F0] rounded-xl px-3 py-2.5"
+                >
+                  <div className="shrink-0">{directionIcon(item.direction)}</div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border"
+                      style={{ background: cfg.bg, color: cfg.text, borderColor: cfg.border }}
+                    >
+                      {cfg.label}
+                    </span>
+                    <span className="text-[10px] text-[#B5B0C8]">{MODEL_LABELS[item.modelType]}</span>
+                  {item.market && (
+                    <span className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#F0EDF8] text-[#6B5CE7] border border-[#C4BAF5]">
+                      {MARKET_CODE[item.market] ?? item.market.toUpperCase()}
+                    </span>
+                  )}
+                  </div>
+                  <p className="text-xs text-[#1E1B3A] font-medium flex-1 min-w-0 truncate">
+                    {item.headline}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onUnpin(item.key)}
+                    className="shrink-0 p-1 rounded-md text-[#B5B0C8] hover:text-[#E94560] hover:bg-[#FEE2E2] transition-all"
+                    title="Remove from watchlist"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
